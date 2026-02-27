@@ -1,0 +1,385 @@
+<?xml version="1.0"?>
+
+<robot xmlns:sensor="http://playerstage.sourceforge.net/gazebo/xmlschema/#sensor"
+       xmlns:controller="http://playerstage.sourceforge.net/gazebo/xmlschema/#controller"
+       xmlns:interface="http://playerstage.sourceforge.net/gazebo/xmlschema/#interface"
+       xmlns:xacro="http://ros.org/wiki/xacro"
+       name="red_rover">
+
+<xacro:arg name="robot_namespace" default="RR03"/>
+
+<!-- Chassis -->
+  <link name="base_link">
+    <inertial>
+      <mass value="20.0"/>
+      <origin xyz="0.0 0 0.05"/>
+      <inertia ixx="0.3" ixy="0.0" ixz="0.0"
+               iyy="0.4" iyz="0.0"
+               izz="0.06"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0.177" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/chassis.stl"/>
+      </geometry>
+      <material name="ChassisRed">
+        <color rgba="0.851 0.0 0.0 1.0"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0.177" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/chassis.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <gazebo reference="base_link">
+    <material value="Gazebo/Red"/>
+  </gazebo>
+
+<!-- Top -->
+  <link name="top_plate">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="-0.025 0 -0.223"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0"
+               izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/top.stl"/>
+      </geometry>
+      <material name="TopBlack">
+        <color rgba="0.038 0.038 0.038 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <gazebo reference="top_plate">
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <joint name="base_top_joint" type="fixed">
+    <origin xyz="0.003 0 0.274" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="top_plate"/>
+  </joint>
+
+<!-- Front + Back Sonar -->
+  <link name="front_sonar">
+    <inertial>
+      <mass value="0.2"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/front_sonar.stl"/>
+      </geometry>
+      <material name="SonarYellow">
+        <color rgba="0.715 0.583 0.210 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <gazebo reference="front_sonar">
+    <material value="Gazebo/Yellow"/>
+  </gazebo>
+
+  <joint name="base_front_joint" type="fixed">
+    <origin xyz="0.193 0 0.25" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="front_sonar"/>
+  </joint>
+
+  <link name="back_sonar">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/back_sonar.stl"/>
+      </geometry>
+      <material name="SonarYellow">
+        <color rgba="0.715 0.583 0.210 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <gazebo reference="back_sonar">
+    <material value="Gazebo/Yellow"/>
+  </gazebo>
+
+  <joint name="base_back_joint" type="fixed">
+    <origin xyz="-0.187 0 0.247" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="back_sonar"/>
+  </joint>
+
+<!-- Drive side macro (front + back axles, hubs, wheels) -->
+<xacro:macro name="p3at_drive_side" params="side reflect">
+
+  <!-- Front Axle -->
+  <link name="p3at_front_${side}_axle">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/axle.stl"/>
+      </geometry>
+      <material name="AxleGrey">
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <gazebo reference="p3at_front_${side}_axle">
+    <material value="Gazebo/Grey"/>
+  </gazebo>
+
+  <joint name="base_front_${side}_axle_joint" type="fixed">
+    <origin xyz="0.135 ${reflect*0.156} 0.111" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="p3at_front_${side}_axle"/>
+  </joint>
+
+  <!-- Front Hub -->
+  <link name="p3at_front_${side}_hub">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/${side}_hubcap.stl"/>
+      </geometry>
+      <material name="HubcapYellow">
+        <color rgba="1.0 0.811 0.151 1.0"/>
+      </material>
+    </visual>
+  </link>
+
+  <gazebo reference="p3at_front_${side}_hub">
+    <material value="Gazebo/Yellow"/>
+  </gazebo>
+
+  <joint name="base_front_${side}_hub_joint" type="fixed">
+    <origin xyz="0 ${reflect*0.041} 0" rpy="0 0 0"/>
+    <parent link="p3at_front_${side}_axle"/>
+    <child link="p3at_front_${side}_hub"/>
+  </joint>
+
+  <!-- Front Wheel -->
+  <link name="p3at_front_${side}_wheel">
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.001985881806" ixy="0" ixz="0"
+               iyy="0.002434972335" iyz="0" izz="0.001882236470"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/wheel.stl"/>
+      </geometry>
+      <material name="WheelBlack">
+        <color rgba="0.117 0.117 0.117 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="${-3.1415927/2} 0 0"/>
+      <geometry>
+        <cylinder radius="0.111" length="0.075"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <gazebo reference="p3at_front_${side}_wheel">
+    <material value="Gazebo/Black"/>
+  </gazebo>
+
+  <joint name="p3at_front_${side}_wheel_joint" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="p3at_front_${side}_hub"/>
+    <child link="p3at_front_${side}_wheel"/>
+  </joint>
+
+  <!-- Back Axle -->
+  <link name="p3at_back_${side}_axle">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/axle.stl"/>
+      </geometry>
+      <material name="AxleGrey">
+        <color rgba="0.5 0.5 0.5 1"/>
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/axle.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <gazebo reference="p3at_back_${side}_axle">
+    <material value="Gazebo/Grey"/>
+  </gazebo>
+
+  <joint name="p3at_back_${side}_axle_joint" type="fixed">
+    <origin xyz="-0.134 ${reflect*0.156} 0.111" rpy="0 0 0"/>
+    <parent link="base_link"/>
+    <child link="p3at_back_${side}_axle"/>
+  </joint>
+
+  <!-- Back Hub -->
+  <link name="p3at_back_${side}_hub">
+    <inertial>
+      <mass value="0.1"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0"
+               iyy="1.0" iyz="0.0" izz="1.0"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/${side}_hubcap.stl"/>
+      </geometry>
+      <material name="HubcapYellow"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry>
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/${side}_hubcap.stl"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <gazebo reference="p3at_back_${side}_hub">
+    <material value="Gazebo/Yellow"/>
+  </gazebo>
+
+  <joint name="p3at_back_${side}_hub_joint" type="fixed">
+    <origin xyz="0 ${reflect*0.041} 0" rpy="0 0 0"/>
+    <parent link="p3at_back_${side}_axle"/>
+    <child link="p3at_back_${side}_hub"/>
+  </joint>
+
+  <!-- Back Wheel -->
+  <link name="p3at_back_${side}_wheel">
+    <inertial>
+      <mass value="1.0"/>
+      <origin xyz="0 0 0"/>
+      <inertia ixx="0.006205882799" ixy="0" ixz="0"
+               iyy="0.007609080214" iyz="0"
+               izz="0.005881988972"/>
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+      <geometry name="pioneer_geom">
+        <mesh filename="package://red_rover_sim/meshes/p3at_meshes/wheel.stl"/>
+      </geometry>
+      <material name="WheelBlack"/>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="${-3.1415927/2} 0 0"/>
+      <geometry>
+        <cylinder radius="0.111" length="0.075"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <gazebo reference="p3at_back_${side}_wheel">
+    <material value="Gazebo/Black"/>
+  </gazebo>
+
+  <joint name="p3at_back_${side}_wheel_joint" type="continuous">
+    <axis xyz="0 1 0"/>
+    <anchor xyz="0 0 0"/>
+    <limit effort="10000" velocity="10000"/>
+    <joint_properties damping="0.001"/>
+    <origin xyz="0 0 0" rpy="0 0 0"/>
+    <parent link="p3at_back_${side}_hub"/>
+    <child link="p3at_back_${side}_wheel"/>
+  </joint>
+
+  <!-- Wheel friction/contact parameters -->
+  <gazebo reference="p3at_back_${side}_wheel">
+    <kp>1000000.0</kp>
+    <kd>80.0</kd>
+    <mu1>3.0</mu1>
+    <mu2>3.0</mu2>
+    <maxVel>100.0</maxVel>
+    <minDepth>0.00</minDepth>
+    <material value="Gazebo/Black"/>
+  </gazebo>
+
+  <gazebo reference="p3at_front_${side}_wheel">
+    <kp>1000000.0</kp>
+    <kd>80.0</kd>
+    <mu1>0.1</mu1>
+    <mu2>0.1</mu2>
+    <maxVel>100.0</maxVel>
+    <minDepth>0.00</minDepth>
+    <material value="Gazebo/Black"/>
+  </gazebo>
+
+</xacro:macro>
+
+<!-- Instantiate left and right drive sides -->
+<xacro:p3at_drive_side side="left" reflect="1"/>
+<xacro:p3at_drive_side side="right" reflect="-1"/>
+
+<!-- ================= Gazebo Plugins ================= -->
+
+<!-- Differential drive controller -->
+<gazebo>
+  <plugin name="gazebo_ros_diff_drive" filename="libgazebo_ros_diff_drive.so">
+    <ros>
+      <namespace>/$(arg robot_namespace)</namespace>
+      <remapping>cmd_vel:=cmd_vel</remapping>
+      <remapping>odom:=odom</remapping>
+    </ros>
+    <update_rate>50.0</update_rate>
+    <left_joint>p3at_back_left_wheel_joint</left_joint>
+    <right_joint>p3at_back_right_wheel_joint</right_joint>
+    <wheel_separation>0.4</wheel_separation>
+    <wheel_diameter>0.222</wheel_diameter>
+    <max_wheel_torque>3000</max_wheel_torque>
+    <max_wheel_acceleration>800.0</max_wheel_acceleration>
+    <command_topic>cmd_vel</command_topic>
+    <odometry_topic>odom</odometry_topic>
+    <odometry_frame>odom</odometry_frame>
+    <robot_base_frame>base_link</robot_base_frame>
+    <publish_odom>true</publish_odom>
+    <publish_odom_tf>true</publish_odom_tf>
+    <publish_wheel_tf>false</publish_wheel_tf>
+  </plugin>
+</gazebo>
+
+
+</robot>
